@@ -1,1 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiac Risk Prediction Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .input-highlight {
+            transition: all 0.3s ease;
+        }
+
+        .input-highlight:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+
+        .result-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-blue-800 mb-2">Cardiac Risk Prediction System</h1>
+            <p class="text-gray-600 text-lg">Advanced machine learning models to assess heart disease risk</p>
+            <div class="w-24 h-1 bg-blue-500 mx-auto mt-4 rounded-full"></div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input Form -->
+            <div class="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-user-circle text-blue-500 mr-2"></i> Patient Data
+                </h2>
+
+                <form id="predictionForm" class="space-y-4">
+                    <!-- Age -->
+                    <div>
+                        <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age (years)</label>
+                        <input type="number" id="age" name="age" min="20" max="100"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g. 54" required>
+                    </div>
+
+                    <!-- Sex -->
+                    <div>
+                        <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sex</label>
+                        <select id="sex" name="sex"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select gender</option>
+                            <option value="0">Female</option>
+                            <option value="1">Male</option>
+                        </select>
+                    </div>
+
+                    <!-- Chest Pain Type -->
+                    <div>
+                        <label for="cp" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                            Chest Pain Type
+                            <span class="tooltip ml-1">
+                                <i class="fas fa-info-circle text-blue-400"></i>
+                                <span class="tooltiptext text-xs">
+                                    0: Typical angina<br>
+                                    1: Atypical angina<br>
+                                    2: Non-anginal pain<br>
+                                    3: Asymptomatic
+                                </span>
+                            </span>
+                        </label>
+                        <select id="cp" name="cp"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select type</option>
+                            <option value="0">Typical angina</option>
+                            <option value="1">Atypical angina</option>
+                            <option value="2">Non-anginal pain</option>
+                            <option value="3">Asymptomatic</option>
+                        </select>
+                    </div>
+
+                    <!-- Resting Blood Pressure -->
+                    <div>
+                        <label for="trestbps" class="block text-sm font-medium text-gray-700 mb-1">Resting BP (mm
+                            Hg)</label>
+                        <input type="number" id="trestbps" name="trestbps" min="80" max="200"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g. 130" required>
+                    </div>
+
+                    <!-- Cholesterol -->
+                    <div>
+                        <label for="chol" class="block text-sm font-medium text-gray-700 mb-1">Cholesterol
+                            (mg/dl)</label>
+                        <input type="number" id="chol" name="chol" min="120" max="600"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g. 250" required>
+                    </div>
+
+                    <!-- Fasting Blood Sugar -->
+                    <div>
+                        <label for="fbs" class="block text-sm font-medium text-gray-700 mb-1">Fasting Blood Sugar > 120
+                            mg/dl</label>
+                        <select id="fbs" name="fbs"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select option</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <!-- Resting ECG -->
+                    <div>
+                        <label for="restecg" class="block text-sm font-medium text-gray-700 mb-1">Resting ECG</label>
+                        <select id="restecg" name="restecg"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select result</option>
+                            <option value="0">Normal</option>
+                            <option value="1">ST-T wave abnormality</option>
+                            <option value="2">Probable LV hypertrophy</option>
+                        </select>
+                    </div>
+
+                    <!-- Max Heart Rate -->
+                    <div>
+                        <label for="thalch" class="block text-sm font-medium text-gray-700 mb-1">Max Heart Rate</label>
+                        <input type="number" id="thalch" name="thalch" min="60" max="220"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g. 170" required>
+                    </div>
+
+                    <!-- Exercise Induced Angina -->
+                    <div>
+                        <label for="exang" class="block text-sm font-medium text-gray-700 mb-1">Exercise Induced
+                            Angina</label>
+                        <select id="exang" name="exang"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select option</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <!-- ST Depression -->
+                    <div>
+                        <label for="oldpeak" class="block text-sm font-medium text-gray-700 mb-1">ST Depression</label>
+                        <input type="number" id="oldpeak" name="oldpeak" min="0" max="10" step="0.1"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g. 1.5" required>
+                    </div>
+
+                    <!-- Slope -->
+                    <div>
+                        <label for="slope" class="block text-sm font-medium text-gray-700 mb-1">Slope of Peak Exercise
+                            ST</label>
+                        <select id="slope" name="slope"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select slope</option>
+                            <option value="1">Upsloping</option>
+                            <option value="2">Flat</option>
+                            <option value="3">Downsloping</option>
+                        </select>
+                    </div>
+
+                    <!-- Number of Major Vessels -->
+                    <div>
+                        <label for="ca" class="block text-sm font-medium text-gray-700 mb-1">Number of Major
+                            Vessels</label>
+                        <select id="ca" name="ca"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select count (0-3)</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+
+                    <!-- Thalassemia -->
+                    <div>
+                        <label for="thal" class="block text-sm font-medium text-gray-700 mb-1">Thalassemia</label>
+                        <select id="thal" name="thal"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 input-highlight focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            required>
+                            <option value="" disabled selected>Select type</option>
+                            <option value="1">Normal</option>
+                            <option value="2">Fixed defect</option>
+                            <option value="3">Reversible defect</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" id="predictBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center pulse">
+                            <i class="fas fa-heartbeat mr-2"></i> Predict Risk
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden bg-white rounded-xl shadow-md p-8 text-center">
+                    <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4">
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Analyzing patient data...</h3>
+                    <p class="text-gray-600 mt-2">Our models are processing your input to assess cardiac risk.</p>
+                </div>
+
+                <!-- Results Container -->
+                <div id="resultsContainer" class="hidden space-y-6">
+                    <!-- Summary Card -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
+                            <h2 class="text-2xl font-bold flex items-center">
+                                <i class="fas fa-chart-line mr-3"></i> Prediction Summary
+                            </h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Patient Overview</h3>
+                                    <div class="space-y-2">
+                                        <p class="flex justify-between"><span class="text-gray-600">Age:</span> <span
+                                                id="summaryAge" class="font-medium"></span></p>
+                                        <p class="flex justify-between"><span class="text-gray-600">Sex:</span> <span
+                                                id="summarySex" class="font-medium"></span></p>
+                                        <p class="flex justify-between"><span class="text-gray-600">Cholesterol:</span>
+                                            <span id="summaryChol" class="font-medium"></span>
+                                        </p>
+                                        <p class="flex justify-between"><span class="text-gray-600">Blood
+                                                Pressure:</span> <span id="summaryBp" class="font-medium"></span></p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Risk Consensus</h3>
+                                    <div class="flex items-center justify-center">
+                                        <div id="riskMeter"
+                                            class="relative w-full h-8 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="absolute inset-0 flex">
+                                                <div class="h-full bg-green-500" style="width: 25%"></div>
+                                                <div class="h-full bg-yellow-400" style="width: 25%"></div>
+                                                <div class="h-full bg-orange-500" style="width: 25%"></div>
+                                                <div class="h-full bg-red-600" style="width: 25%"></div>
+                                            </div>
+                                            <div id="riskIndicator"
+                                                class="absolute top-0 left-0 h-full bg-blue-600 w-1/4 rounded-full transition-all duration-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p id="riskConsensus" class="text-center mt-4 text-lg font-semibold"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Model Results Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Logistic Regression -->
+                        <div class="result-card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-blue-100 p-3 rounded-full mr-4">
+                                    <i class="fas fa-project-diagram text-blue-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Logistic Regression</h3>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Model Probability</span>
+                                    <span id="lrProb" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="lrBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Prediction</span>
+                                <span id="lrPred" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+                            </div>
+                        </div>
+
+                        <!-- Random Forest -->
+                        <div class="result-card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-green-100 p-3 rounded-full mr-4">
+                                    <i class="fas fa-tree text-green-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Random Forest</h3>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Model Probability</span>
+                                    <span id="rfProb" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="rfBar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Prediction</span>
+                                <span id="rfPred" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+                            </div>
+                        </div>
+
+                        <!-- Optimized Logistic Regression -->
+                        <div class="result-card bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-purple-100 p-3 rounded-full mr-4">
+                                    <i class="fas fa-tachometer-alt text-purple-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Optimized LR</h3>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Confidence Margin</span>
+                                    <span id="olfConf" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Group Threshold</span>
+                                    <span id="olfThres" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Raw Probability</span>
+                                    <span id="olrProb" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="olrBar" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Prediction</span>
+                                <span id="olrPred" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+                            </div>
+                        </div>
+
+                        <!-- Optimized Random Forest -->
+                        <div class="result-card bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-yellow-100 p-3 rounded-full mr-4">
+                                    <i class="fas fa-robot text-yellow-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Optimized RF</h3>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Confidence Margin</span>
+                                    <span id="orfConf" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Group Threshold</span>
+                                    <span id="orfThres" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Raw Probability</span>
+                                    <span id="orfProb" class="text-sm font-bold"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="orfBar" class="bg-yellow-500 h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Prediction</span>
+                                <span id="orfPred" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="result-card bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-yellow-100 p-3 rounded-full mr-4">
+                                <i class="fas fa-robot text-yellow-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800">ExponentiatedGradient</h3>
+                        </div>
+                        <div class="mb-4 hidden">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-gray-700">Model Probability</span>
+                                <span id="mitProb" class="text-sm font-bold"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div id="mitBar" class="bg-yellow-500 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-700">Prediction</span>
+                            <span id="mitPred" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mitigation Strategy -->
+                <div id="mitigationSection" class="hidden bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-purple-800 p-6 text-white">
+                        <h2 class="text-2xl font-bold flex items-center">
+                            <i class="fas fa-shield-alt mr-3"></i> Mitigation Strategy
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="mitigationContent" class="space-y-4">
+                            <!-- Content will be filled by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Comparison Chart -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-chart-bar text-blue-500 mr-2"></i> Model Comparison
+                    </h2>
+                    <div class="h-64">
+                        <canvas id="modelChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-heart text-red-500 mr-2"></i> Health Recommendations
+                    </h2>
+                    <div id="recommendations" class="space-y-3">
+                        <!-- Will be filled by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('predictionForm');
+            const predictBtn = document.getElementById('predictBtn');
+            const loadingState = document.getElementById('loadingState');
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            // Sample data for demonstration
+            const sampleData = {
+                age: 54,
+                sex: 1,
+                cp: 0,
+                trestbps: 130,
+                chol: 250,
+                fbs: 0,
+                restecg: 1,
+                thalch: 170,
+                exang: 0,
+                oldpeak: 1.5,
+                slope: 2,
+                ca: 0,
+                thal: 3
+            };
+
+            // Fill form with sample data
+            function fillSampleData() {
+                for (const key in sampleData) {
+                    if (document.getElementById(key)) {
+                        document.getElementById(key).value = sampleData[key];
+                    }
+                }
+            }
+
+            // Call the function to fill sample data
+            fillSampleData();
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                // Show loading state
+                loadingState.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                predictBtn.disabled = true;
+                predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+
+                // Collect form data
+                const formData = {};
+                const inputs = form.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    formData[input.name] = input.value;
+                });
+
+                // In a real application, you would send this data to your backend
+                // For this demo, we'll simulate an API call with setTimeout
+                const response = await fetch("http://127.0.0.1:5000/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                setTimeout(() => {
+                    // Simulate API response with random probabilities
+                    const response = {
+                        logistic_regression: {
+                            probability: (Math.random() * 0.5 + 0.1).toFixed(4),
+                            prediction: Math.random() > 0.5 ? 1 : 0
+                        },
+                        random_forest: {
+                            probability: (Math.random() * 0.5 + 0.1).toFixed(4),
+                            prediction: Math.random() > 0.5 ? 1 : 0
+                        },
+                        optimized_lr: {
+                            probability: (Math.random() * 0.5 + 0.1).toFixed(4),
+                            prediction: Math.random() > 0.5 ? 1 : 0
+                        },
+                        optimized_rf: {
+                            probability: (Math.random() * 0.5 + 0.1).toFixed(4),
+                            prediction: Math.random() > 0.5 ? 1 : 0
+                        },
+                        mitigation: {
+                            recommended: Math.random() > 0.7,
+                            strategy: "Consider additional diagnostic tests due to model discrepancies."
+                        }
+                    };
+
+                    // Display results
+                    displayResults(data, formData);
+
+                    // Hide loading state
+                    loadingState.classList.add('hidden');
+                    resultsContainer.classList.remove('hidden');
+                    predictBtn.disabled = false;
+                    predictBtn.innerHTML = '<i class="fas fa-heartbeat mr-2"></i> Predict Risk';
+                }, 2000);
+            });
+
+            function displayResults(data, formData) {
+                // Update summary
+                document.getElementById('summaryAge').textContent = formData.age;
+                document.getElementById('summarySex').textContent = formData.sex == 1 ? 'Male' : 'Female';
+                document.getElementById('summaryChol').textContent = formData.chol + ' mg/dl';
+                document.getElementById('summaryBp').textContent = formData.trestbps + ' mm Hg';
+
+                // Calculate average risk
+                const probabilities = [
+                    parseFloat(data.logistic_regression.probability),
+                    parseFloat(data.random_forest.probability),
+                    parseFloat(data.optimized_lr.probability),
+                    parseFloat(data.optimized_rf.probability)
+                ];
+                const avgRisk = probabilities.reduce((a, b) => a + b, 0) / probabilities.length;
+
+                // Update risk meter
+                const riskIndicator = document.getElementById('riskIndicator');
+
+
+                // Set risk level text
+                const riskConsensus = document.getElementById('riskConsensus');
+                if (data.logistic_regression.prediction == 0) {
+                    riskIndicator.style.width = `${0}%`;
+                    riskConsensus.textContent = 'Low Risk';
+                    riskConsensus.className = 'text-center mt-4 text-lg font-semibold text-green-600';
+                    riskIndicator.className = 'absolute top-0 left-0 h-full bg-green-500 rounded-full transition-all duration-500';
+                } else if (data.logistic_regression.prediction > 0) {
+                    riskIndicator.style.width = `${100}%`;
+                    riskConsensus.textContent = 'High Risk';
+                    riskConsensus.className = 'text-center mt-4 text-lg font-semibold text-yellow-600';
+                    riskIndicator.className = 'absolute top-0 left-0 h-full bg-yellow-500 rounded-full transition-all duration-500';
+                }
+
+
+                // Update model results
+                updateModelResult('lr', data.logistic_regression);
+                updateModelResult('rf', data.random_forest);
+                updateModelResult('olr', data.optimized_lr);
+                updateModelResult('orf', data.optimized_rf);
+                updateModelResult('mit', data.mitigation);
+                document.getElementById('orfThres').innerText = data.optimized_rf.threshold;
+                document.getElementById('orfConf').innerText = data.optimized_rf.adjusted_confidence;
+
+                document.getElementById('olfThres').innerText = data.optimized_lr.threshold;
+                document.getElementById('olfConf').innerText = data.optimized_lr.adjusted_confidence;
+
+                // Show mitigation if recommended
+                if (data.mitigation.recommended) {
+                    document.getElementById('mitigationSection').classList.remove('hidden');
+                    const mitigationContent = document.getElementById('mitigationContent');
+                    mitigationContent.innerHTML = `
+                        <div class="bg-purple-50 border-l-4 border-purple-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-purple-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-purple-800">Model Discrepancy Detected</h3>
+                                    <div class="mt-2 text-sm text-purple-700">
+                                        <p>${data.mitigation.strategy}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-800 mb-2">Suggested Actions</h4>
+                                <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+                                    <li>Schedule a stress test</li>
+                                    <li>Consult with a cardiologist</li>
+                                    <li>Consider echocardiogram</li>
+                                </ul>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-green-800 mb-2">Lifestyle Changes</h4>
+                                <ul class="list-disc list-inside text-sm text-green-700 space-y-1">
+                                    <li>Increase physical activity</li>
+                                    <li>Adopt heart-healthy diet</li>
+                                    <li>Monitor blood pressure regularly</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Generate recommendations
+                generateRecommendations(avgRisk, formData);
+
+                // Create comparison chart
+                createComparisonChart(data);
+            }
+
+            function updateModelResult(prefix, data) {
+                const probElement = document.getElementById(`${prefix}Prob`);
+                const barElement = document.getElementById(`${prefix}Bar`);
+                const predElement = document.getElementById(`${prefix}Pred`);
+
+                const prob = parseFloat(data.probability);
+                const percentage = (prob * 100).toFixed(1);
+
+                probElement.textContent = `${percentage}%`;
+                barElement.style.width = `${percentage}%`;
+
+                if (data.prediction === 1) {
+                    predElement.textContent = 'At Risk';
+                    predElement.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800';
+                } else {
+                    predElement.textContent = 'Low Risk';
+                    predElement.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800';
+                }
+
+                // Set bar color based on probability
+                if (prob < 0.3) {
+                    barElement.className = `${prefix === 'lr' ? 'bg-blue-500' : prefix === 'rf' ? 'bg-green-500' : prefix === 'olr' ? 'bg-purple-500' : 'bg-yellow-500'} h-2.5 rounded-full`;
+                } else if (prob < 0.6) {
+                    barElement.className = `${prefix === 'lr' ? 'bg-blue-400' : prefix === 'rf' ? 'bg-green-400' : prefix === 'olr' ? 'bg-purple-400' : 'bg-yellow-400'} h-2.5 rounded-full`;
+                } else {
+                    barElement.className = `${prefix === 'lr' ? 'bg-blue-300' : prefix === 'rf' ? 'bg-green-300' : prefix === 'olr' ? 'bg-purple-300' : 'bg-yellow-300'} h-2.5 rounded-full`;
+                }
+            }
+
+            function generateRecommendations(avgRisk, formData) {
+                const recommendations = document.getElementById('recommendations');
+                let html = '';
+
+                if (avgRisk < 0.3) {
+                    html = `
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle text-green-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-green-800">Your heart health looks good!</h3>
+                                    <div class="mt-2 text-sm text-green-700">
+                                        <p>Continue with your current healthy lifestyle.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-800 mb-2">Maintenance Tips</h4>
+                                <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+                                    <li>Annual check-ups with your doctor</li>
+                                    <li>Regular moderate exercise</li>
+                                    <li>Balanced diet with plenty of vegetables</li>
+                                </ul>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-purple-800 mb-2">Preventive Measures</h4>
+                                <ul class="list-disc list-inside text-sm text-purple-700 space-y-1">
+                                    <li>Monitor cholesterol levels annually</li>
+                                    <li>Check blood pressure regularly</li>
+                                    <li>Maintain healthy weight</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                } else if (avgRisk < 0.6) {
+                    html = `
+                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-yellow-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">Moderate risk detected</h3>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <p>Some risk factors present that could benefit from lifestyle changes.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-red-800 mb-2">Key Risk Factors</h4>
+                                <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                                    ${formData.chol > 200 ? '<li>High cholesterol (' + formData.chol + ' mg/dl)</li>' : ''}
+                                    ${formData.trestbps > 130 ? '<li>Elevated blood pressure (' + formData.trestbps + ' mm Hg)</li>' : ''}
+                                    ${formData.age > 45 ? '<li>Age (' + formData.age + ' years)</li>' : ''}
+                                </ul>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-green-800 mb-2">Action Plan</h4>
+                                <ul class="list-disc list-inside text-sm text-green-700 space-y-1">
+                                    <li>Consult with your doctor about cholesterol</li>
+                                    <li>Increase physical activity</li>
+                                    <li>Reduce saturated fat intake</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-heartbeat text-red-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">High risk detected</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <p>Immediate consultation with a healthcare provider is recommended.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-800 mb-2">Urgent Actions</h4>
+                                <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+                                    <li>Schedule appointment with cardiologist</li>
+                                    <li>Consider stress test and echocardiogram</li>
+                                    <li>Review medication options with doctor</li>
+                                </ul>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-purple-800 mb-2">Lifestyle Changes</h4>
+                                <ul class="list-disc list-inside text-sm text-purple-700 space-y-1">
+                                    <li>Adopt heart-healthy Mediterranean diet</li>
+                                    <li>Begin supervised exercise program</li>
+                                    <li>Quit smoking if applicable</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                recommendations.innerHTML = html;
+            }
+
+            function createComparisonChart(data) {
+                const ctx = document.getElementById('modelChart').getContext('2d');
+
+                // Destroy previous chart if it exists
+                if (window.modelComparisonChart) {
+                    window.modelComparisonChart.destroy();
+                }
+
+                window.modelComparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Logistic Regression', 'Random Forest', 'Optimized LR', 'Optimized RF'],
+                        datasets: [{
+                            label: 'Model Probability',
+                            data: [
+                                parseFloat(data.logistic_regression.probability) * 100,
+                                parseFloat(data.random_forest.probability) * 100,
+                                parseFloat(data.optimized_lr.probability) * 100,
+                                parseFloat(data.optimized_rf.probability) * 100
+                            ],
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(124, 58, 237, 0.7)',
+                                'rgba(234, 179, 8, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(124, 58, 237, 1)',
+                                'rgba(234, 179, 8, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Probability (%)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
